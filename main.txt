@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(home: ContactListScreen());
+  }
+}
+
+class ContactListScreen extends StatefulWidget {
+  @override
+  _ContactListScreenState createState() => _ContactListScreenState();
+}
+
+class _ContactListScreenState extends State<ContactListScreen> {
+  final List<Contact> contacts = [
+    Contact(name: 'santhosh', email: 'santhosh@gmail.com'),
+    Contact(name: 'sathish', email: 'sathish@gmail.com'),
+    Contact(name: 'praveen', email: 'praveen@gmail.com'),
+    Contact(name: 'Mani', email: 'mani@gmail.com'),
+  ];
+
+  Map<String, bool> loading = {};
+  Map<String, String> statusMessage = {};
+
+  Future<void> sendEmail(Contact contact) async {
+    setState(() => loading[contact.email] = true);
+
+    final Uri emailLaunchUri = Uri(
+      scheme: 'mailto',
+      path: contact.email,
+      queryParameters: {
+        'subject': 'Hello from Contact Email Sender',
+        'body': 'Dear ${contact.name},\n\nThis is a test email.'
+      },
+    );
+
+    try {
+      await launchUrl(emailLaunchUri);
+      setState(() {
+        loading[contact.email] = false;
+        statusMessage[contact.email] = 'Email sent!';
+      });
+    } catch (e) {
+      setState(() {
+        loading[contact.email] = false;
+        statusMessage[contact.email] = 'Failed to send: $e';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text('Contact Email Sender')),
+      backgroundColor: Colors.grey,
+      body: ListView.builder(
+        itemCount: contacts.length,
+        itemBuilder: (_, index) {
+          final contact = contacts[index];
+          return Card(
+            child: ListTile(
+              title: Text(contact.name),
+              subtitle: Text(contact.email),
+              trailing: loading[contact.email] == true
+                  ? CircularProgressIndicator()
+                  : ElevatedButton(
+                onPressed: () => sendEmail(contact),
+                child: Text('Send Email'),
+              ),
+              contentPadding: EdgeInsets.all(16),
+              isThreeLine: true,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class Contact {
+  final String name;
+  final String email;
+
+  Contact({required this.name, required this.email});
+}
